@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <title>Snippet App</title>
+  </head>
+  <body>
+    <div id="app">
+      <p>{{ message }}</p>  <!-- 定義した変数名 -->
+      <p>{{ message2 }}</p> <!-- 定義した変数名 -->
+      <button v-on:click="changeMsg">Change</button> <!-- v-on:click="changeMsg" で click が行われた時に changeMsg メソッドを実行する -->
+      <ul>
+        <li v-for="data in list">{{ data.title }}</li> <!-- v-for で data () で定義した 配列 list の各要素を data として1つ目から最後まで反復して処理 -->
+      </ul>
+      <button v-on:click="listSnippet">listSnippet</button> <!-- v-on:click で button 要素をクリックした時に実行するメソッドを指定(listSnippet) -->
+      <div>
+        <input v-model="title" placeholder="title"> <!-- v-model とすることで、data () {} で定義した変数の値を表示させます。methods の中などで処理された場合も強制的にリンクされ、変数の値に合わせてリアルタイムに表示（レンダリング）します。 -->
+        <input v-model="language" placeholder="language">
+        <input v-model="contents" placeholder="contents">
+      </div>
+      <button v-on:click="postSnippet">postSnippet</button>
+    </div>
+    <script>
+    
+      new Vue({ // Vueオブジェクトの定義
+        el: "#app", // id指定
+        data() { // 変数の定義と初期値の代入
+          return {
+            message: "Hello Vue!",
+            message2: "Hoge",
+            list: [{title: 'title1'}, {title: 'title2'}], // 投稿するデータに必要なキーに対する変数を定義
+            title: 'new title',
+            language: 'Ruby',
+            contents: 'contents' 
+          };
+        },
+        mounted () {  // アプリが立ち上がった最初のタイミングで実行される関数を定義
+          this.setMsg();  // Vueオブジェクト自体のsetMsgを実行
+        },
+        methods: { // Vueオブジェクト内に関数を定義
+          setMsg: function () { // setMsgメソッドを定義
+            this.message = 'Set Message'; // Vueオブジェクトのdata内で定義した変数messageを参照し「Set Message」を代入
+          },
+          changeMsg: function() { // changeメソッドを定義
+            this.message = 'Changed Message'
+            axios.get('/snippets.json') // axios という通信ライブラリを用いて Rails で実装した API を呼び出し
+            .then(response => ( // 呼び出した API のレスポンスを .then(response => ()) の => () の中で、response として値を渡して処理
+                this.message2 = response.data[0]['title'] // sqlite コマンドを用いて登録したデータを json 形式で response として取得し、1件目のタイトルを 変数 message2 に代入
+              )
+            )
+          },
+          listSnippet: function() {
+            axios.get('/snippets.json')
+              .then(response => (
+                this.list = response.data // response.data で配列になっている状態のまま 変数 list に代入
+              )
+            );
+          },
+          postSnippet: function() {
+            axios.post('/snippets.json', {title: 'new title', language: 'Ruby', contents: 'contents'}) // title:'title', language:'Ruby', contents:'contents' の 1 snippet を新たに投稿
+              .then(response => (
+                this.listSnippet()  // 変数と同じように、メソッド内で別のメソッドを呼び出すときも this.{メソッド名} とすることで呼び出す
+              )
+            );
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
